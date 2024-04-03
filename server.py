@@ -30,33 +30,17 @@ app = Flask(__name__, template_folder=tmpl_dir)
 #     DATABASEURI = "postgresql://zy2431:123123@34.73.36.248/project1"
 #
 # Modify these with your own credentials you received from TA!
-DATABASE_USERNAME = ""
-DATABASE_PASSWRD = ""
-DATABASE_HOST = "34.148.107.47" # change to 34.28.53.86 if you used database 2 for part 2
-DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HOST}/project1"
+DATABASE_USERNAME = "jl5447"
+DATABASE_PASSWRD = "814543"
+DATABASE_HOST = "35.212.75.104" # change to 34.28.53.86 if you used database 2 for part 2       Originally: 34.148.107.47
+#Original : DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HOST}/project1" 
+DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HOST}/proj1part2" 
 
 
 #
 # This line creates a database engine that knows how to connect to the URI above.
 #
 engine = create_engine(DATABASEURI)
-
-#
-# Example of running queries in your database
-# Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data. This is only an example showing you how to run queries in your database using SQLAlchemy.
-#
-with engine.connect() as conn:
-	create_table_command = """
-	CREATE TABLE IF NOT EXISTS test (
-		id serial,
-		name text
-	)
-	"""
-	res = conn.execute(text(create_table_command))
-	insert_table_command = """INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace')"""
-	res = conn.execute(text(insert_table_command))
-	# you need to commit for create, insert, update queries to reflect
-	conn.commit()
 
 
 @app.before_request
@@ -87,91 +71,90 @@ def teardown_request(exception):
 		pass
 
 
-#
-# @app.route is a decorator around index() that means:
-#   run index() whenever the user tries to access the "/" path using a GET request
-#
-# If you wanted the user to go to, for example, localhost:8111/foobar/ with POST or GET then you could use:
-#
-#       @app.route("/foobar/", methods=["POST", "GET"])
-#
-# PROTIP: (the trailing / in the path is important)
-# 
-# see for routing: https://flask.palletsprojects.com/en/1.1.x/quickstart/#routing
-# see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-#
 @app.route('/')
 def index():
-	"""
-	request is a special object that Flask provides to access web request information:
-
-	request.method:   "GET" or "POST"
-	request.form:     if the browser submitted a form, this contains the data in the form
-	request.args:     dictionary of URL arguments, e.g., {a:1, b:2} for http://localhost?a=1&b=2
-
-	See its API: https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data
-	"""
-
-	# DEBUG: this is debugging code to see what request looks like
-	print(request.args)
-
-
-	#
-	# example of a database query
-	#
-	select_query = "SELECT name from test"
+	select_query = "SELECT * from timeslots"
 	cursor = g.conn.execute(text(select_query))
-	names = []
+	timeslots = []
+	columns = cursor.keys()
 	for result in cursor:
-		names.append(result[0])
+		timeslot_dict = {}
+		for column, value in zip(columns, result):
+			timeslot_dict[column] = value
+		timeslots.append(timeslot_dict)
 	cursor.close()
 
-	#
-	# Flask uses Jinja templates, which is an extension to HTML where you can
-	# pass data to a template and dynamically generate HTML based on the data
-	# (you can think of it as simple PHP)
-	# documentation: https://realpython.com/primer-on-jinja-templating/
-	#
-	# You can see an example template in templates/index.html
-	#
-	# context are the variables that are passed to the template.
-	# for example, "data" key in the context variable defined below will be 
-	# accessible as a variable in index.html:
-	#
-	#     # will print: [u'grace hopper', u'alan turing', u'ada lovelace']
-	#     <div>{{data}}</div>
-	#     
-	#     # creates a <div> tag for each element in data
-	#     # will print: 
-	#     #
-	#     #   <div>grace hopper</div>
-	#     #   <div>alan turing</div>
-	#     #   <div>ada lovelace</div>
-	#     #
-	#     {% for n in data %}
-	#     <div>{{n}}</div>
-	#     {% endfor %}
-	#
-	context = dict(data = names)
+	select_query = "SELECT * from course"
+	cursor = g.conn.execute(text(select_query))
+	courses = []
+	columns = cursor.keys()
+	for result in cursor:
+		course_dict = {}
+		for column, value in zip(columns, result):
+			course_dict[column] = value
+		courses.append(course_dict)
+	cursor.close()
+	
+	select_query = "SELECT * from program"
+	cursor = g.conn.execute(text(select_query))
+	programs= []
+	columns = cursor.keys()
+	for result in cursor:
+		program_dict = {}
+		for column, value in zip(columns, result):
+			program_dict[column] = value
+		programs.append(program_dict)
+	cursor.close()
+
+	select_query = "SELECT * from plans where student_id=1" 
+	cursor = g.conn.execute(text(select_query))
+	plans= []
+	columns = cursor.keys()
+	for result in cursor:
+		plans_dict = {}
+		for column, value in zip(columns, result):
+			plans_dict[column] = value
+		plans.append(plans_dict)
+	cursor.close()
+
+	course_ids_with_sections = [(plan['course_id'], plan['section']) for plan in plans]
+	print("course_ids_with_sections: ", course_ids_with_sections)
+
+	chosen_courses= []
+	for course_id, section in course_ids_with_sections:
+		select_query = "SELECT * FROM course WHERE course_id = :course_id AND section = :section"
+		cursor = g.conn.execute(text(select_query), {'course_id': course_id, 'section': section})
+		columns = cursor.keys()
+		for result in cursor:
+			chosen_courses_dict = {}
+			for column, value in zip(columns, result):
+				chosen_courses_dict[column] = value
+		chosen_courses.append(chosen_courses_dict)
+	cursor.close()
 
 
-	#
-	# render_template looks in the templates/ folder for files.
-	# for example, the below file reads template/index.html
-	#
-	return render_template("index.html", **context)
+	# print("timeslots: ", timeslots)
+	# print("programs: ", programs)
+	# print("courses: ", courses)
+	# print("plans: ", plans)
+	print("chosen_courses: ", chosen_courses )
 
-#
-# This is an example of a different path.  You can see it at:
-# 
-#     localhost:8111/another
-#
-# Notice that the function name is another() rather than index()
-# The functions for each app.route need to have different names
-#
-@app.route('/another')
-def another():
-	return render_template("another.html")
+	# Sort the list of dictionaries by start_time
+	sorted_timeslots = sorted(timeslots, key=lambda x: x['start_time'])
+
+	# Remove duplicates based on start_time
+	unique_timeslots = []
+	seen_start_times = set()
+	for timeslot in sorted_timeslots:
+		start_time = timeslot['start_time']
+		if start_time not in seen_start_times:
+			unique_timeslots.append(timeslot)
+			seen_start_times.add(start_time)
+
+# unique_timeslots now contains the ordered list of dictionaries without duplicates
+
+
+	return render_template("index.html", timeslots=unique_timeslots, classes_chosen=chosen_courses, programs=programs, classes=courses)
 
 
 # Example of adding new data to the database
@@ -187,6 +170,75 @@ def add():
 	g.conn.commit()
 	return redirect('/')
 
+# Example of adding new data to the database
+@app.route('/add_class/<int:course_id>/<int:section>', methods=['POST'])
+def add_class(course_id, section):
+
+	select_query = "SELECT * from plans where student_id=1" 
+	cursor = g.conn.execute(text(select_query))
+	plans= []
+	columns = cursor.keys()
+	for result in cursor:
+		plans_dict = {}
+		for column, value in zip(columns, result):
+			plans_dict[column] = value
+		plans.append(plans_dict)
+	cursor.close()
+
+	course_ids_with_sections = [(plan['course_id'], plan['section']) for plan in plans]
+
+	def exists_in_list(course_id, section, list_of_tuples):
+		for tup in list_of_tuples:
+			if tup == (course_id, section):
+				return True
+		return False
+
+	exists = exists_in_list(course_id, section, course_ids_with_sections)
+	
+	if not exists:
+		params = {}
+		params["student_id"] = 1
+		params["schedule_id"] = 2
+		params["course_id"] = course_id
+		params["section"] = section
+		g.conn.execute(text('INSERT INTO plans(student_id, schedule_id, course_id, section) VALUES (:student_id, :schedule_id, :course_id, :section)'), params)
+		g.conn.commit()
+	return redirect('/')
+
+
+@app.route('/remove_class/<int:course_id>/<int:section>', methods=['POST'])
+def remove_class(course_id, section):
+
+	select_query = "SELECT * from plans where student_id=1" 
+	cursor = g.conn.execute(text(select_query))
+	plans= []
+	columns = cursor.keys()
+	for result in cursor:
+		plans_dict = {}
+		for column, value in zip(columns, result):
+			plans_dict[column] = value
+		plans.append(plans_dict)
+	cursor.close()
+
+	course_ids_with_sections = [(plan['course_id'], plan['section']) for plan in plans]
+
+	def exists_in_list(course_id, section, list_of_tuples):
+		for tup in list_of_tuples:
+			if tup == (course_id, section):
+				return True
+		return False
+
+	exists = exists_in_list(course_id, section, course_ids_with_sections)
+	
+	if exists:
+		params = {}
+		params["student_id"] = 1
+		params["schedule_id"] = 2
+		params["course_id"] = course_id
+		params["section"] = section
+		g.conn.execute(text('DELETE FROM plans WHERE student_id = :student_id AND schedule_id = :schedule_id AND course_id = :course_id AND section = :section'), params)
+		g.conn.commit()
+	return redirect('/')
 
 @app.route('/login')
 def login():
@@ -220,3 +272,4 @@ if __name__ == "__main__":
 		app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
 
 run()
+

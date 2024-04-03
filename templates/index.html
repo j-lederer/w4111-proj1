@@ -1,29 +1,142 @@
-<html>
-  <style>
-    body{ 
-      font-size: 15pt;
-      font-family: arial;
-    }
-  </style>
-
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule App</title>
+    <style>
+        /* Set minimum width for table cells */
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            text-align: center;
+        }
+        /* th, td */
+        .table1 th, .table1 td {
+            border: 1px solid black;
+            padding: 8px;
+            min-width: 80px; /* Set the minimum width for cells */
+        }
+    </style>
+</head>
 <body>
-  <h1>Some famous Computer Scientists</h1>
-  <div>{{data}}</div>
+    <h1>My Schedule Spring 2024</h1>
+    <table border="1" class="table1">
+        <tr>
+            <th>Time Slot</th>
+            <th>MON</th>
+            <th>TUES</th>
+            <th>WED</th>
+            <th>THURS</th>
+            <th>FRI</th>
+        </tr>
+        <!-- Display classes in the schedule -->
+        {% for timeslot in timeslots %}
+        <tr>
+            <td>{{ timeslot.start_time }} - {{ timeslot.end_time }}</td>
+            <td>
+                
+            
+                {% for class in classes_chosen %}
+                    {% if timeslot.start_time == class.start_time and 'Monday' in class.day %}
+                    
+                        {{class.course_name}} {{ class.course_id }} sec: {{class.section }}
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td>
+                {% for class in classes_chosen %}
+                    {% if timeslot.start_time == class.start_time and 'Tuesday' in class.day %}
+                        {{class.course_name}} {{ class.course_id }} sec: {{class.section }}
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td>
+                {% for class in classes_chosen %}
+                    {% if timeslot.start_time == class.start_time and 'Wednesday' in class.day %}
+                        {{class.course_name}} {{ class.course_id }} sec: {{class.section }}
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td>
+                {% for class in classes_chosen %}
+                    {% if timeslot.start_time == class.start_time and 'Thursday' in class.day %}
+                        {{class.course_name}} {{ class.course_id }} sec: {{class.section }}
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td>
+                {% for class in classes_chosen %}
+                    {% if timeslot.start_time == class.start_time and 'Friday' in class.day %}
+                        {{class.course_name}} {{ class.course_id }} sec: {{class.section }}
+                    {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 
-  <div>
-    {% for n in data %}
-    <div>{{n}}</div>
+    <h2>Available Classes</h2>
+    <form action="/filter_classes" method="post">
+        <select name="program">
+            <option value="All">All Majors</option>
+            {% for program in programs %}
+            <option value="{{ program.program_name}}">{{ program.program_name }}</option>
+            {% endfor %}
+            
+        </select>
+        <button type="submit">Choose</button>
+    </form>
+
+ 
+    <table border="1" class ='table2'>
+        <tr>
+            <th>Course ID</th>
+            <th>Section</th>
+            <th>Name</th>
+            <th>Credits</th>
+            <th>Department</th>
+            <th>Instructor</th>
+            <th>Day</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Add Class</th>
+        </tr>
+    {% for class in classes %}
+    <tr>
+        <td>{{class.course_id}}</td>
+        <td>{{class.section}}</td>
+        <td>{{class.course_name}}</td>
+        <td>{{class.credits}}</td>
+        <td>{{class.department}}</td>
+        <td>{{class.instructor}}</td>
+        <td>{{class.day}}</td>
+        <td>{{class.start_time}}</td>
+        <td>{{class.end_time}}</td>
+        <td> <form action="/add_class/{{class.course_id}}/{{class.section}}" method="post">
+            <button type="submit">Add</button>
+        </form></td>
+        
+    </tr>
     {% endfor %}
-  </div>
+    </table>
 
-<p><a href="another">Go to the other page</a></p>
 
-<form method="POST" action="/add">
-<p>Name of new computer scientist: <input type="text" name="name"> <input type="submit" value="Add"></p>
-</form>
-
+    <h2>My Classes</h2>
+    <table border="1" class ='table3'>
+        <tr>
+            <th></th>
+            <th>Remove</th>
+        </tr>
+    {% for class in classes_chosen %}
+    <tr>
+        <td> {{class.course_name}} {{class.course_id}} sec: {{class.section}}</td>
+        <td> <form action="/remove_class/{{class.course_id}}/{{class.section}}" method="post">
+            <button type="submit">Remove</button>
+        </form></td>
+        
+    </tr>
+    {% endfor %}
 </body>
-
-
 </html>
+
